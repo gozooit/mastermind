@@ -1,6 +1,33 @@
+# todo
+# - check user input, allow r instead of red etc
+# - create code class
+# - create compare class ?
+
 class Code
+  ALLOWED_INPUTS = [
+    'red', 'blue', 'yellow', 'green', 'blank', 'r', 'b', 'y', 'g', ' '
+  ].freeze
+  ABBREVIATIONS = {
+    red: 'r', blue: 'b', yellow: 'y', green: 'g', blank: ''
+  }.freeze
   def initialize(str)
-    # Rajouter digit, number et colorpool
+    @code = str
+  end
+
+  # Rajouter digit, number et colorpool
+  def is_valid?(input = @code)
+    input_array = input.split(' ')
+    return false if input_array.length != 4
+
+    input_array.map do |str|
+      return false unless ALLOWED_INPUTS.include?(str)
+
+      if ABBREVIATIONS.values.include?(str)
+        ABBREVIATIONS.key(str).to_s
+      else
+        str
+      end
+    end
   end
 end
 
@@ -19,7 +46,9 @@ class Mastermind
       @turn += 1
       puts "\nTurn #{@turn}"
       guess
+      # p"@secret code #{@secret_code}", "@secret colorpool #{@secret_colorpool}"
       res = compare
+      # p"@secret code #{@secret_code}", res
       break if display_res(res)
       # break if res == [true, true, true, true]
     end
@@ -30,6 +59,8 @@ class Mastermind
     input = gets.chomp.split
     player_guess = color_to_digit(input)
     @guessed_codes.push(player_guess)
+    # Update secret color pool at each guess so compare works
+    @secret_colorpool = create_colorpool
     player_guess
   end
 
@@ -40,42 +71,53 @@ class Mastermind
   def check_match(code = current_guess)
     res = []
     code.each_with_index do |digit, index|
-      res << (@secret_code[index] == code[index] ? true : digit)
+      # res << (@secret_code[index] == code[index] ? true : digit)
+      res << if @secret_code[index] == code[index]
+               @secret_colorpool = update_colorpool(code[index])
+               true
+             else
+               digit
+             end
     end
-    p "check_match => #{res}"
     res
   end
 
   def check_misplaced(res_true)
     res = []
-    secret_code_updated = update_secret_code(res_true)
     res_true.each do |digit|
       res << if digit == true
                digit
+             elsif update_secret_code(res_true).include?(digit)
+               @secret_colorpool = update_colorpool(digit)
+               'misplaced'
              else
-               secret_code_updated.include?(digit) ? 'misplaced' : false
+               false
              end
     end
-    p "check_missplaced => #{res}"
+    # p"check_missplaced => #{res}"
     res
-  end
-
-  def update_secret_code(res_true)
-    secret_code_updated = []
-    res_true.each_with_index do |digit, index|
-      secret_code_updated << @secret_code[index] unless digit == true
-    end
-    p secret_code_updated
-    secret_code_updated
   end
 
   def compare(code = current_guess)
     return Array.new(4, true) if match_secret?(code)
 
-    p code
-    # current_colorpool = @secret_colorpool.slice
+    # p"code = #{code}"
     res_true = check_match(code)
     check_misplaced(res_true)
+  end
+
+  def update_secret_code(res_true)
+    secret_code_updated = []
+    res_true.each_with_index do |digit, index|
+      if digit == true
+        @secret_colorpool = update_colorpool(@secret_code[index])
+      else
+        secret_code_updated << @secret_code[index]
+      end
+    end
+    # p"secret_code #{@secret_code}"
+    # p"secret_code_updated #{secret_code_updated}"
+    secret_code_updated
   end
 
   def create_colorpool(code = @secret_code)
@@ -85,7 +127,7 @@ class Mastermind
     end
   end
 
-  def update_colorpool(digit, colorpool)
+  def update_colorpool(digit, colorpool = @secret_colorpool)
     color = COLOR.key(digit)
     colorpool[color] -= 1 if colorpool.key?(color) && colorpool[color].positive?
     colorpool
@@ -131,6 +173,10 @@ class Mastermind
   end
 end
 
-mastermind = Mastermind.new
+# mastermind = Mastermind.new
 
-mastermind.play
+# mastermind.play
+
+code = Code.new('r  r b')
+
+p code.is_valid?
