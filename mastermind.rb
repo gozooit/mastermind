@@ -3,30 +3,73 @@
 # - create code class
 # - create compare class ?
 
+class String
+  def integer?
+    self.to_i.to_s == self
+  end
+end
+
 class Code
+  attr_accessor :digit, :color
+
   ALLOWED_INPUTS = [
-    'red', 'blue', 'yellow', 'green', 'blank', 'r', 'b', 'y', 'g', ' '
+    'blank', 'blue', 'red', 'yellow', 'green',
+    ' ', 'b', 'r', 'y', 'g',
+    '0', '1', '2', '3', '4'
   ].freeze
   ABBREVIATIONS = {
     red: 'r', blue: 'b', yellow: 'y', green: 'g', blank: ''
   }.freeze
-  def initialize(str)
-    @code = str
+  RANDOM_CODE = [rand(0..4), rand(0..4), rand(0..4), rand(0..4)].join(' ')
+  COLOR_DIGIT = { blank: 0, blue: 1, red: 2, yellow: 3, green: 4 }.freeze
+
+  def initialize(str = RANDOM_CODE)
+    @input = str.split(' ') if str.instance_of?(String)
+    return unless Code.is_valid?(@input)
+
+    @color = Code.format(@input)
+    @digit = Code.to_digit(@color)
   end
 
   # Rajouter digit, number et colorpool
-  def is_valid?(input = @code)
-    input_array = input.split(' ')
-    return false if input_array.length != 4
+  def self.is_valid?(input)
+    return false if input.length != 4
 
-    input_array.map do |str|
-      return false unless ALLOWED_INPUTS.include?(str)
+    input.map { |str| return false unless ALLOWED_INPUTS.include?(str) }
+    true
+  end
 
+  def self.format(input)
+    if input.all?(&:integer?)
+      Code.to_color(Code.format_digit(input))
+    else
+      Code.format_color(input)
+    end
+  end
+
+  def self.format_digit(input)
+    input.map(&:to_i)
+  end
+
+  def self.format_color(input)
+    input.map do |str|
       if ABBREVIATIONS.values.include?(str)
         ABBREVIATIONS.key(str).to_s
       else
         str
       end
+    end
+  end
+
+  def self.to_color(code)
+    code.map do |digit|
+      COLOR_DIGIT.key(digit).to_s
+    end
+  end
+
+  def self.to_digit(code)
+    code.map do |color|
+      COLOR_DIGIT.fetch(color.to_sym)
     end
   end
 end
@@ -35,7 +78,7 @@ class Mastermind
   COLOR = { blank: 0, blue: 1, red: 2, yellow: 3, green: 4 }.freeze
 
   def initialize
-    @secret_code = [rand(0..4), rand(0..4), rand(0..4), rand(0..4)]
+    @secret_code = Code.new
     @secret_colorpool = create_colorpool
     @guessed_codes = []
     @turn = 0
@@ -55,13 +98,20 @@ class Mastermind
   end
 
   def guess
-    puts 'Please make your guess (color color color color) :'
-    input = gets.chomp.split
-    player_guess = color_to_digit(input)
-    @guessed_codes.push(player_guess)
+    input = player_input
+    @player_code = Code.new(input)
+    @guessed_codes.push(@player_code.digit)
     # Update secret color pool at each guess so compare works
     @secret_colorpool = create_colorpool
-    player_guess
+    @player_code
+  end
+
+  def player_input
+    loop do
+      puts 'Please make your guess (color color color color) :'
+      input = gets.chomp
+      break input if Code.is_valid?(input.split) == true
+    end
   end
 
   def current_guess
@@ -72,7 +122,7 @@ class Mastermind
     res = []
     code.each_with_index do |digit, index|
       # res << (@secret_code[index] == code[index] ? true : digit)
-      res << if @secret_code[index] == code[index]
+      res << if @secret_code.digit[index] == code[index]
                @secret_colorpool = update_colorpool(code[index])
                true
              else
@@ -110,9 +160,9 @@ class Mastermind
     secret_code_updated = []
     res_true.each_with_index do |digit, index|
       if digit == true
-        @secret_colorpool = update_colorpool(@secret_code[index])
+        @secret_colorpool = update_colorpool(@secret_code.digit[index])
       else
-        secret_code_updated << @secret_code[index]
+        secret_code_updated << @secret_code.digit[index]
       end
     end
     # p"secret_code #{@secret_code}"
@@ -120,8 +170,8 @@ class Mastermind
     secret_code_updated
   end
 
-  def create_colorpool(code = @secret_code)
-    digit_to_color(code).reduce(Hash.new(0)) do |result, digit|
+  def create_colorpool(code = @secret_code.color)
+    code.reduce(Hash.new(0)) do |result, digit|
       result[digit] += 1
       result
     end
@@ -142,41 +192,29 @@ class Mastermind
   def display_res(res)
     if res == [true, true, true, true]
       puts 'You found the secret code, it was indeed '\
-           "#{digit_to_color(@secret_code)}"
+           "#{@secret_code.color}"
       true
     else
-      puts "You guessed #{digit_to_color(current_guess)}\n=> #{res}"
+      puts "You guessed #{Code.to_color(current_guess)}\n=> #{res}"
       false
     end
   end
 
   private
 
-  def digit_to_color(code)
-    code.map do |digit|
-      COLOR.key(digit).to_s
-    end
-  end
-
-  def color_to_digit(code)
-    code.map do |color|
-      COLOR.fetch(color.to_sym)
-    end
-  end
-
-  def generate_secret
-    @secret_code = [rand(1..4), rand(1..4), rand(1..4), rand(1..4)]
-  end
-
   def match_secret?(code = current_guess)
-    @secret_code == code
+    @secret_code.digit == code
   end
 end
 
-# mastermind = Mastermind.new
+mastermind = Mastermind.new
 
-# mastermind.play
+mastermind.play
 
-code = Code.new('r  r b')
+# code = Code.new("r r r r")
 
-p code.is_valid?
+# p code
+
+# code2 = Code.new
+
+# p code2
