@@ -28,6 +28,10 @@ class Code
     @digit = Code.to_digit(@color)
   end
 
+  def self.random_code
+    Code.format_digit(RANDOM_CODE.split)
+  end
+
   def self.valid?(input)
     return false if input.length != 4
 
@@ -73,44 +77,65 @@ end
 # Contain the game
 class Mastermind
   COLOR = { blank: 0, blue: 1, red: 2, yellow: 3, green: 4 }.freeze
+  attr_reader :turn
 
   def initialize
     @secret_code = Code.new
-    @guessed_codes = []
+    @previous_codes = []
     @turn = 0
   end
 
-  def play
+  def player_play
     while @turn < 12
       @turn += 1
       puts "\nTurn #{@turn}"
-      guess
+      player_guess
       res = compare
       break if display_res(res)
     end
   end
 
-  def guess
-    input = player_input
-    @player_code = Code.new(input)
-    @guessed_codes.push(@player_code.digit)
-    # Update secret color pool at each guess so compare works
-    @player_code
+  def computer_play
+    set_secret
+    while @turn < 12
+      @turn += 1
+      puts "\nTurn #{@turn}"
+      @guessed_code = if defined?(res)
+                        Computer.guess(res, @previous_codes)
+                      else Code.new end
+      @previous_codes.push(@guessed_code.digit)
+      res = compare
+      break if display_res(res)
+    end
   end
 
-  def player_input
+  def player_guess
+    input = player_input('Please make your guess (color color color color) :')
+    @guessed_code = Code.new(input)
+    @previous_codes.push(@guessed_code.digit)
+    # Update secret color pool at each guess so compare works
+    @guessed_code
+  end
+
+  def set_secret
+    input = player_input('Please chose a secret code '\
+      '(color color color color) :')
+    @secret_code = Code.new(input)
+  end
+
+  def player_input(str)
     loop do
-      puts 'Please make your guess (color color color color) :'
+      puts str
       input = gets.chomp
       break input if Code.valid?(input.split) == true
     end
   end
 
   def current_guess
-    @guessed_codes[@turn - 1]
+    @previous_codes[@turn - 1]
   end
 
-  def check_match(code = @player_code)
+  def check_match(code = @guessed_code)
     res = []
     code.digit.each_with_index do |digit, index|
       res << (@secret_code.digit[index] == code.digit[index] ? true : digit)
@@ -131,7 +156,7 @@ class Mastermind
     res
   end
 
-  def compare(code = @player_code)
+  def compare(code = @guessed_code)
     return Array.new(4, true) if match_secret?
 
     res_match = check_match(code)
@@ -157,11 +182,20 @@ class Mastermind
     end
   end
 
-  def match_secret?(code = @player_code)
+  def match_secret?(code = @guessed_code)
     @secret_code.digit == code.digit
+  end
+end
+
+# Computer makes guesses
+class Computer
+  attr_accessor :computer_code
+
+  def self.guess(res, previous_codes)
+
   end
 end
 
 mastermind = Mastermind.new
 
-mastermind.play
+mastermind.computer_play
