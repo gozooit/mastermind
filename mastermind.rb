@@ -1,8 +1,3 @@
-# todo
-# - check user input, allow r instead of red etc
-# - create code class
-# - create compare class ?
-
 class String
   def integer?
     self.to_i.to_s == self
@@ -29,26 +24,8 @@ class Code
 
     @color = Code.format(@input)
     @digit = Code.to_digit(@color)
-    # @colorpool = Code.create_colorpool(@color)
   end
 
-  # def self.create_colorpool(code)
-  #   code.reduce(Hash.new(0)) do |result, digit|
-  #     result[digit] += 1
-  #     result
-  #   end
-  # end
-
-  # def update_colorpool(digit)
-  #   color = COLOR_DIGIT.key(digit).to_s
-  #   @colorpool[color] -= 1 if @colorpool.key?(color) && @colorpool[color].positive?
-  # end
-
-  # def reset_colorpool
-  #   @colorpool = Code.create_colorpool(@color)
-  # end
-
-  # Rajouter digit, number et colorpool
   def self.is_valid?(input)
     return false if input.length != 4
 
@@ -137,25 +114,20 @@ class Mastermind
     res = []
     code.digit.each_with_index do |digit, index|
       # res << (@secret_code[index] == code[index] ? true : digit)
-      res << if @secret_code.digit[index] == code.digit[index]
-              #  @secret_code.colorpool = code.update_colorpool(code.digit[index])
-               true
-             else
-               digit
-             end
+      res << (@secret_code.digit[index] == code.digit[index] ? true : digit)
     end
     res
   end
 
   def check_misplaced(res_match)
     res = []
+    secret_updated = update_secret_code(res_match)
     res_match.each do |digit|
       res << if digit == true then digit
-             elsif update_secret_code(res_match).include?(digit)
+             elsif secret_updated.include?(digit)
+               secret_updated.delete_at(secret_updated.index(digit))
                'misplaced'
-             else
-               false
-             end
+             else false end
     end
     res
   end
