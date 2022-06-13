@@ -1,9 +1,11 @@
+# Modified String class to check if string is an integer
 class String
   def integer?
     self.to_i.to_s == self
   end
 end
 
+# Handle all aspect of code for Mastermind
 class Code
   attr_accessor :digit, :color
 
@@ -20,13 +22,13 @@ class Code
 
   def initialize(str = RANDOM_CODE)
     @input = str.split(' ') if str.instance_of?(String)
-    return unless Code.is_valid?(@input)
+    return unless Code.valid?(@input)
 
     @color = Code.format(@input)
     @digit = Code.to_digit(@color)
   end
 
-  def self.is_valid?(input)
+  def self.valid?(input)
     return false if input.length != 4
 
     input.map { |str| return false unless ALLOWED_INPUTS.include?(str) }
@@ -68,6 +70,7 @@ class Code
   end
 end
 
+# Contain the game
 class Mastermind
   COLOR = { blank: 0, blue: 1, red: 2, yellow: 3, green: 4 }.freeze
 
@@ -82,11 +85,8 @@ class Mastermind
       @turn += 1
       puts "\nTurn #{@turn}"
       guess
-      # p"@secret code #{@secret_code}", "@secret colorpool #{@secret_colorpool}"
       res = compare
-      # p"@secret code #{@secret_code}", res
       break if display_res(res)
-      # break if res == [true, true, true, true]
     end
   end
 
@@ -102,7 +102,7 @@ class Mastermind
     loop do
       puts 'Please make your guess (color color color color) :'
       input = gets.chomp
-      break input if Code.is_valid?(input.split) == true
+      break input if Code.valid?(input.split) == true
     end
   end
 
@@ -113,7 +113,6 @@ class Mastermind
   def check_match(code = @player_code)
     res = []
     code.digit.each_with_index do |digit, index|
-      # res << (@secret_code[index] == code[index] ? true : digit)
       res << (@secret_code.digit[index] == code.digit[index] ? true : digit)
     end
     res
@@ -135,30 +134,17 @@ class Mastermind
   def compare(code = @player_code)
     return Array.new(4, true) if match_secret?
 
-    # p"code = #{code}"
     res_match = check_match(code)
-    res = check_misplaced(res_match)
-    # @secret_code.reset_colorpool
-    res
+    check_misplaced(res_match)
   end
 
   def update_secret_code(res_match)
     secret_code_updated = []
     res_match.each_with_index do |digit, index|
-      unless digit == true || digit == 'misplaced'
-        secret_code_updated << @secret_code.digit[index]
-      end
+      secret_code_updated << @secret_code.digit[index] unless digit == true
     end
-    # p"secret_code #{@secret_code}"
-    # p"secret_code_updated #{secret_code_updated}"
     secret_code_updated
   end
-
-  # def check_compare(res, guess = current_guess)
-  #   hash_secret = number_of_color(@secret_code)
-  #   hash_guess = number_of_color(guess)
-  #   p digit_to_color(@secret_code), digit_to_color(guess), res, hash_secret, hash_guess
-  # end
 
   def display_res(res)
     if res == [true, true, true, true]
@@ -179,17 +165,3 @@ end
 mastermind = Mastermind.new
 
 mastermind.play
-
-# code = Code.new("r r r r")
-
-# p code
-
-# code2 = Code.new
-
-# p code2.colorpool
-
-# code2.update_colorpool(1)
-
-# p code2.colorpool
-
-# p code2
