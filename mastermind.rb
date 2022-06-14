@@ -218,7 +218,9 @@ class Computer
 
   def initialize
     @guessed_code = Code.new
-    @misplaced_colors = {}
+    @misplaced_colors = {
+      red: [], blue: [], yellow: [], green: [], blank: []
+    }
     @incomplete_code = ['', '', '', '']
   end
 
@@ -242,9 +244,14 @@ class Computer
     end
   end
 
-  def analyze_true(guessed_code, res)
+  def analyze(guessed_code, res)
     res.each_with_index do |digit, index|
-      @incomplete_code[index] = guessed_code.digit[index] if digit == true
+      case digit
+      when true
+        @incomplete_code[index] = guessed_code.digit[index]
+      when 'misplaced'
+        @misplaced_colors[color.to_sym].merge!([pos])
+      end
       # regrouper tout le code ici
     end
   end
