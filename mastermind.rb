@@ -28,6 +28,10 @@ class Code
     @digit = Code.to_digit(@color)
   end
 
+  def self.color_digit
+    COLOR_DIGIT
+  end
+
   def self.random_code
     Code.format_digit(RANDOM_CODE.split)
   end
@@ -61,14 +65,14 @@ class Code
     end
   end
 
-  def self.to_color(code)
-    code.map do |digit|
+  def self.to_color(code_array)
+    code_array.map do |digit|
       COLOR_DIGIT.key(digit).to_s
     end
   end
 
-  def self.to_digit(code)
-    code.map do |color|
+  def self.to_digit(code_array)
+    code_array.map do |color|
       COLOR_DIGIT.fetch(color.to_sym)
     end
   end
@@ -101,7 +105,7 @@ class Mastermind
       @turn += 1
       puts "\nTurn #{@turn}"
       @guessed_code = if defined?(res)
-                        Computer.guess(res, @previous_codes)
+                        @guessed_code = Computer.guess(@guessed_code, res)
                       else Code.new end
       @previous_codes.push(@guessed_code.digit)
       res = compare
@@ -187,13 +191,78 @@ class Mastermind
   end
 end
 
+class Player
+  attr_accessor :guessed_code
+
+  # def initialize(name)
+  #   @name = name
+  # end
+
+  def input(str)
+    loop do
+      puts str
+      input = gets.chomp
+      break input if Code.valid?(input.split) == true
+    end
+  end
+
+  def guess
+    input = input('Please make your guess (color color color color) :')
+    @guessed_code = Code.new(input)
+  end
+end
+
 # Computer makes guesses
 class Computer
-  attr_accessor :computer_code
+  attr_accessor :guessed_code
 
-  def self.guess(res, previous_codes)
-
+  def initialize
+    @guessed_code = Code.new
+    @misplaced_colors = {}
+    @incomplete_code = ['', '', '', '']
   end
+
+  def guess(res)
+    incomplete_code = analyze_true(@guessed_code, res)
+    misplaced_color = analyze_misplaced(@guessed_code, res)
+    misplaced_color.each do |color, pos|
+      if @misplaced_colors.key?(color.to_sym)
+        @misplaced_colors[color.to_sym].merge!(pos)
+      else
+        @misplaced_color[color.to_sym] = pos
+      end
+    end
+    @misplaced_colors[]
+    incomplete_code.each_with_index do |digit, index|
+      next if digit == '' && misplaced_colors != {}
+
+      misplaced_colors.each do |color, pos|
+        incomplete_code[index] = Code.color_digit[color] if pos != index
+      end
+    end
+  end
+
+  def analyze_true(guessed_code, res)
+    res.each_with_index do |digit, index|
+      @incomplete_code[index] = guessed_code.digit[index] if digit == true
+      # regrouper tout le code ici
+    end
+  end
+
+  def analyze_misplaced(guessed_code, res)
+    misplaced = {}
+    res.each_with_index do |digit, index|
+      misplaced[guessed_code.color[index].to_sym] = [index] if digit == 'misplaced'
+    end
+    misplaced_color.each do |color, pos|
+      if @misplaced_colors.key?(color.to_sym)
+        @misplaced_colors[color.to_sym].merge!(pos)
+      else
+        @misplaced_color[color.to_sym] = pos
+      end
+    end
+  end
+
 end
 
 mastermind = Mastermind.new
