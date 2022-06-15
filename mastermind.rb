@@ -217,61 +217,92 @@ class Computer
   attr_accessor :guessed_code
 
   def initialize
-    @guessed_code = Code.new
+    @guessed_code = Code.new('r blank y b')
     @misplaced_colors = {
       red: [], blue: [], yellow: [], green: [], blank: []
     }
     @incomplete_code = ['', '', '', '']
   end
 
-  def guess(res)
-    incomplete_code = analyze_true(@guessed_code, res)
-    misplaced_color = analyze_misplaced(@guessed_code, res)
-    misplaced_color.each do |color, pos|
-      if @misplaced_colors.key?(color.to_sym)
-        @misplaced_colors[color.to_sym].merge!(pos)
-      else
-        @misplaced_color[color.to_sym] = pos
-      end
-    end
-    @misplaced_colors[]
-    incomplete_code.each_with_index do |digit, index|
-      next if digit == '' && misplaced_colors != {}
-
-      misplaced_colors.each do |color, pos|
-        incomplete_code[index] = Code.color_digit[color] if pos != index
-      end
-    end
+  def display_classvar
+    p @guessed_code
+    p @misplaced_colors
+    p @incomplete_code
   end
 
-  def analyze(guessed_code, res)
+  def analyze(res)
     res.each_with_index do |digit, index|
       case digit
       when true
-        @incomplete_code[index] = guessed_code.digit[index]
+        @incomplete_code[index] = @guessed_code.digit[index]
       when 'misplaced'
-        @misplaced_colors[color.to_sym].merge!([pos])
+        @misplaced_colors[@guessed_code.color[index].to_sym].push(index)
       end
       # regrouper tout le code ici
     end
   end
 
-  def analyze_misplaced(guessed_code, res)
-    misplaced = {}
-    res.each_with_index do |digit, index|
-      misplaced[guessed_code.color[index].to_sym] = [index] if digit == 'misplaced'
-    end
-    misplaced_color.each do |color, pos|
-      if @misplaced_colors.key?(color.to_sym)
-        @misplaced_colors[color.to_sym].merge!(pos)
-      else
-        @misplaced_color[color.to_sym] = pos
-      end
+  def empty_position
+    @incomplete_code.map.with_index do |digit, index|
+      index if digit == ''
     end
   end
 
+  def replace_misplaced
+    empty_pos = empty_position
+    return if @misplaced_colors.values.all? { |value| value == [] }
+
+    @misplaced_colors.each do |key, value|
+      empty_pos.each do |pos|
+        p "value = #{value}"
+        p pos
+        unless value.include?(pos)
+          p @incomplete_code[pos]
+          p Code.color_digit[key.to_sym]
+          @incomplete_code[pos] = Code.color_digit[key.to_sym]
+          empty_pos.delete(pos)
+        end
+      end
+    end
+  end
 end
 
-mastermind = Mastermind.new
+#   def guess
+#     new_guess = []
+#     @incomplete_code.each_with_index do |digit, index|
+#       case digit
+#       when digit.is_a? == Integer
+#         new_guess.push(digit)
+#       when ''
+#         @misplaced_colors.each do |key, array|
+#           next if array.include?(index)
+#           new_guess.push(Code.color_digit[key.to_sym])
+#           break
+#         end
+#       end
+#     end
+#   end
+# end
 
-mastermind.computer_play
+# mastermind = Mastermind.new
+
+# mastermind.computer_play
+
+# computer = Computer.new
+
+# computer.analyze(['misplaced', false, true, 'misplaced'])
+# computer.display_classvar
+# computer.replace_misplaced
+# computer.display_classvar
+
+array = [1, 2, 3, 4]
+
+array.delete_if do |v|
+  p v
+  p array
+  v == 3
+end
+
+p array
+
+
