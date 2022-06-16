@@ -12,7 +12,7 @@ class Code
   ALLOWED_INPUTS = [
     'blank', 'blue', 'red', 'yellow', 'green',
     '.', 'b', 'r', 'y', 'g',
-    '0', '1', '2', '3', '4'
+    '0', '1', '2', '3', '4', 0, 1, 2, 3, 4
   ].freeze
   ABBREVIATIONS = {
     red: 'r', blue: 'b', yellow: 'y', green: 'g', blank: '.'
@@ -21,7 +21,7 @@ class Code
   COLOR_DIGIT = { blank: 0, blue: 1, red: 2, yellow: 3, green: 4 }.freeze
 
   def initialize(str = RANDOM_CODE)
-    @input = str.split(' ') if str.instance_of?(String)
+    @input = str.instance_of?(String) ? str.split(' ') : str
     return unless Code.valid?(@input)
 
     @color = Code.format(@input)
@@ -101,15 +101,15 @@ class Mastermind
 
   def computer_play
     set_secret
+    computer = Computer.new
     while @turn < 12
       @turn += 1
       puts "\nTurn #{@turn}"
-      @guessed_code = if defined?(res)
-                        @guessed_code = Computer.guess(@guessed_code, res)
-                      else Code.new end
+      @guessed_code = defined?(@result) ? computer.guess(@result) : computer.guess
       @previous_codes.push(@guessed_code.digit)
-      res = compare
-      break if display_res(res)
+      @result = compare
+      # p '', computer, ''
+      break if display_res(@result)
     end
   end
 
@@ -217,17 +217,21 @@ class Computer
   attr_accessor :guessed_code
 
   def initialize
-    @guessed_code = Code.new('r blank y b')
+    @guessed_code = Code.new
+    @code_history = []
     @misplaced_colors = {
       red: [], blue: [], yellow: [], green: [], blank: []
     }
+    @valid_colors = [0, 1, 2, 3, 4]
     @incomplete_code = ['', '', '', '']
   end
 
-  def display_classvar
-    p @guessed_code
-    p @misplaced_colors
-    p @incomplete_code
+  def update_guessed_code
+    @code_history.push(@guessed_code)
+    @guessed_code = Code.new(@incomplete_code)
+    # @incomplete_code = Array.new(4, '')
+    @incomplete_code = ['', '', '', '']
+    @guessed_code
   end
 
   def analyze(res)
@@ -235,35 +239,64 @@ class Computer
       case digit
       when true
         @incomplete_code[index] = @guessed_code.digit[index]
+        @misplaced_colors[@guessed_code.color[index].to_sym].pop
       when 'misplaced'
         @misplaced_colors[@guessed_code.color[index].to_sym].push(index)
+      when false
+        @valid_colors.delete(@guessed_code.digit[index])
       end
-      # regrouper tout le code ici
     end
   end
 
   def empty_position
-    @incomplete_code.map.with_index do |digit, index|
+    empty_pos = @incomplete_code.map.with_index do |digit, index|
       index if digit == ''
     end
+    empty_pos.compact
+  end
+
+  # fonction random qui retire les digit false pour tester des nouveaux
+
+  def number_misplaced
+    cpt = 0
+    @misplaced_colors.each_value { |value| cpt += 1 unless value == [] }
+    cpt
   end
 
   def replace_misplaced
     empty_pos = empty_position
     return if @misplaced_colors.values.all? { |value| value == [] }
 
-    @misplaced_colors.each do |key, value|
-      empty_pos.each do |pos|
-        p "value = #{value}"
-        p pos
+    cpt = number_misplaced
+    @misplaced_colors.each do |color, value|
+      next if value == []
+
+      empty_pos.delete_if do |pos|
+        return false if cpt.zero?
+
         unless value.include?(pos)
-          p @incomplete_code[pos]
-          p Code.color_digit[key.to_sym]
-          @incomplete_code[pos] = Code.color_digit[key.to_sym]
-          empty_pos.delete(pos)
+          @incomplete_code[pos] = Code.color_digit[color.to_sym]
+          cpt -= 1
+          true
         end
       end
     end
+  end
+
+  def fill_empty
+    @incomplete_code.each_with_index do |value, index|
+      @incomplete_code[index] = @valid_colors.sample if value == ''
+    end
+  end
+
+  def guess(res = Array.new(4, true))
+    analyze(res)
+    replace_misplaced
+    fill_empty
+    update_guessed_code
+    # @guessed_code = Code.new(@incomplete_code)
+    # @incomplete_code = ['', '', '', '']
+    # @guessed_code
   end
 end
 
@@ -284,25 +317,23 @@ end
 #   end
 # end
 
-# mastermind = Mastermind.new
+mastermind = Mastermind.new
 
-# mastermind.computer_play
+mastermind.computer_play
 
 # computer = Computer.new
 
-# computer.analyze(['misplaced', false, true, 'misplaced'])
 # computer.display_classvar
-# computer.replace_misplaced
+# computer.guess(['misplaced', false, true, 'misplaced'])
 # computer.display_classvar
 
-array = [1, 2, 3, 4]
+# array = [1, 2, 3, 4]
 
-array.delete_if do |v|
-  p v
-  p array
-  v == 3
-end
+# array.delete_if do |v|
+#   p v
+#   p array
+#   p v * 2 if v == 3
+# end
 
-p array
-
+# p array
 
