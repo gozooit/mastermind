@@ -5,79 +5,6 @@ class String
   end
 end
 
-# Handle all aspect of code for Mastermind
-class Code
-  attr_accessor :digit, :color
-
-  ALLOWED_INPUTS = [
-    'blank', 'blue', 'red', 'yellow', 'green',
-    '.', 'b', 'r', 'y', 'g',
-    '0', '1', '2', '3', '4', 0, 1, 2, 3, 4
-  ].freeze
-  ABBREVIATIONS = {
-    red: 'r', blue: 'b', yellow: 'y', green: 'g', blank: '.'
-  }.freeze
-  RANDOM_CODE = [rand(0..4), rand(0..4), rand(0..4), rand(0..4)].join(' ')
-  COLOR_DIGIT = { blank: 0, blue: 1, red: 2, yellow: 3, green: 4 }.freeze
-
-  def initialize(str = RANDOM_CODE)
-    @input = str.instance_of?(String) ? str.split(' ') : str
-    return unless Code.valid?(@input)
-
-    @color = Code.format(@input)
-    @digit = Code.to_digit(@color)
-  end
-
-  def self.color_digit
-    COLOR_DIGIT
-  end
-
-  def self.random_code
-    Code.format_digit(RANDOM_CODE.split)
-  end
-
-  def self.valid?(input)
-    return false if input.length != 4
-
-    input.map { |str| return false unless ALLOWED_INPUTS.include?(str) }
-    true
-  end
-
-  def self.format(input)
-    if input.all?(&:integer?)
-      Code.to_color(Code.format_digit(input))
-    else
-      Code.format_color(input)
-    end
-  end
-
-  def self.format_digit(input)
-    input.map(&:to_i)
-  end
-
-  def self.format_color(input)
-    input.map do |str|
-      if ABBREVIATIONS.values.include?(str)
-        ABBREVIATIONS.key(str).to_s
-      else
-        str
-      end
-    end
-  end
-
-  def self.to_color(code_array)
-    code_array.map do |digit|
-      COLOR_DIGIT.key(digit).to_s
-    end
-  end
-
-  def self.to_digit(code_array)
-    code_array.map do |color|
-      COLOR_DIGIT.fetch(color.to_sym)
-    end
-  end
-end
-
 # Contain the game
 class Mastermind
   COLOR = { blank: 0, blue: 1, red: 2, yellow: 3, green: 4 }.freeze
@@ -191,6 +118,80 @@ class Mastermind
   end
 end
 
+# Handle all aspect of code for Mastermind
+class Code
+  attr_accessor :digit, :color
+
+  ALLOWED_INPUTS = [
+    'blank', 'blue', 'red', 'yellow', 'green',
+    '.', 'b', 'r', 'y', 'g',
+    '0', '1', '2', '3', '4', 0, 1, 2, 3, 4
+  ].freeze
+  ABBREVIATIONS = {
+    red: 'r', blue: 'b', yellow: 'y', green: 'g', blank: '.'
+  }.freeze
+  RANDOM_CODE = [rand(0..4), rand(0..4), rand(0..4), rand(0..4)].join(' ')
+  COLOR_DIGIT = { blank: 0, blue: 1, red: 2, yellow: 3, green: 4 }.freeze
+
+  def initialize(str = RANDOM_CODE)
+    @input = str.instance_of?(String) ? str.split(' ') : str
+    return unless Code.valid?(@input)
+
+    @color = Code.format(@input)
+    @digit = Code.to_digit(@color)
+  end
+
+  def self.color_digit
+    COLOR_DIGIT
+  end
+
+  def self.random_code
+    Code.format_digit(RANDOM_CODE.split)
+  end
+
+  def self.valid?(input)
+    return false if input.length != 4
+
+    input.map { |str| return false unless ALLOWED_INPUTS.include?(str) }
+    true
+  end
+
+  def self.format(input)
+    if input.all?(&:integer?)
+      Code.to_color(Code.format_digit(input))
+    else
+      Code.format_color(input)
+    end
+  end
+
+  def self.format_digit(input)
+    input.map(&:to_i)
+  end
+
+  def self.format_color(input)
+    input.map do |str|
+      if ABBREVIATIONS.values.include?(str)
+        ABBREVIATIONS.key(str).to_s
+      else
+        str
+      end
+    end
+  end
+
+  def self.to_color(code_array)
+    code_array.map do |digit|
+      COLOR_DIGIT.key(digit).to_s
+    end
+  end
+
+  def self.to_digit(code_array)
+    code_array.map do |color|
+      COLOR_DIGIT.fetch(color.to_sym)
+    end
+  end
+end
+
+# Player makes guesses
 class Player
   attr_accessor :guessed_code
 
@@ -212,13 +213,12 @@ class Player
   end
 end
 
-# Computer makes guesses
+# Computer makes guesses / Player set secret
 class Computer
   attr_accessor :guessed_code
 
   def initialize
     @guessed_code = Code.new
-    @code_history = []
     @misplaced_colors = {
       red: [], blue: [], yellow: [], green: [], blank: []
     }
@@ -227,7 +227,6 @@ class Computer
   end
 
   def update_guessed_code
-    @code_history.push(@guessed_code)
     @guessed_code = Code.new(@incomplete_code)
     # @incomplete_code = Array.new(4, '')
     @incomplete_code = ['', '', '', '']
@@ -294,46 +293,9 @@ class Computer
     replace_misplaced
     fill_empty
     update_guessed_code
-    # @guessed_code = Code.new(@incomplete_code)
-    # @incomplete_code = ['', '', '', '']
-    # @guessed_code
   end
 end
-
-#   def guess
-#     new_guess = []
-#     @incomplete_code.each_with_index do |digit, index|
-#       case digit
-#       when digit.is_a? == Integer
-#         new_guess.push(digit)
-#       when ''
-#         @misplaced_colors.each do |key, array|
-#           next if array.include?(index)
-#           new_guess.push(Code.color_digit[key.to_sym])
-#           break
-#         end
-#       end
-#     end
-#   end
-# end
 
 mastermind = Mastermind.new
 
 mastermind.computer_play
-
-# computer = Computer.new
-
-# computer.display_classvar
-# computer.guess(['misplaced', false, true, 'misplaced'])
-# computer.display_classvar
-
-# array = [1, 2, 3, 4]
-
-# array.delete_if do |v|
-#   p v
-#   p array
-#   p v * 2 if v == 3
-# end
-
-# p array
-
